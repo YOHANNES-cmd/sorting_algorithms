@@ -1,131 +1,112 @@
 #include "deck.h"
-/**
- * aux_num_fun - turn into integer card value
- * @head_tmp1: pointer to the list
- * Return: integer rep
- **/
-int aux_num_fun(deck_node_t *head_tmp1)
-{
-	int aux_num, j;
-	int num[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-	char val[13] = {'A', '2', '3', '4', '5', '6', '7',
-		'8', '9', '1', 'J', 'Q', 'K'};
 
-	for (j = 0; j < 13; j++)
-	{
-		if (head_tmp1->card->value[0] == val[j])
-			aux_num = num[j];
-	}
-
-	return (aux_num);
-}
 /**
- * num_sort - sorts a doubly linked list of integers, 4 stages
- * @list: pointer to the list head
- * Return: no return
- **/
-void num_sort(deck_node_t **list)
-{
-	deck_node_t *head_tmp1, *head_tmp2, *aux1, *aux2;
-	int flag = 0, i, aux_num1, aux_num2;
-	unsigned int k;
-
-	head_tmp1 = *list;
-	head_tmp2 = *list;
-	for (i = 0; i < 4; i++)
-	{ k =  head_tmp1->card->kind;
-		while (head_tmp1->next && head_tmp1->next->card->kind == k)
-		{
-			aux_num1 = aux_num_fun(head_tmp1);
-			aux_num2 = aux_num_fun(head_tmp1->next);
-			flag = 0;
-			head_tmp2 = head_tmp1;
-			while (head_tmp2 && head_tmp2->card->kind == k && aux_num1 > aux_num2)
-			{
-				aux1 = head_tmp2;
-				aux2 = head_tmp2->next;
-				aux1->next = aux2->next;
-				if (aux2->next)
-					aux2->next->prev = aux1;
-				aux2->prev = aux1->prev;
-				aux2->next = aux1;
-				aux1->prev = aux2;
-				if (aux2->prev)
-					aux2->prev->next = aux2;
-				head_tmp2 = aux2->prev;
-				if (!aux2->prev)
-					*list = aux2;
-				flag = 1;
-				if (!head_tmp2)
-					break;
-				aux_num1 = aux_num_fun(head_tmp2);
-				aux_num2 = aux_num_fun(head_tmp2->next);
-			}
-			if (flag == 0)
-				head_tmp1 = head_tmp1->next;
-		}
-		head_tmp1 = head_tmp1->next;
-	}
-}
-/**
- * kind_sort - sorts a doubly linked list of integers
- * in ascending order using the Insertion sort ailgorithm
- * @list: pointer to the list head
- * Return: no return
- **/
-void kind_sort(deck_node_t **list)
-{
-	deck_node_t *head_tmp1, *head_tmp2, *aux1, *aux2;
-	int flag;
-
-	if (list)
-	{
-		head_tmp1 = *list;
-		head_tmp2 = *list;
-		while (list && head_tmp1->next)
-		{
-			if (head_tmp1->next)
-			{
-				flag = 0;
-				head_tmp2 = head_tmp1;
-				while (head_tmp2 && head_tmp2->card->kind > head_tmp2->next->card->kind)
-				{
-					aux1 = head_tmp2;
-					aux2 = head_tmp2->next;
-					aux1->next = aux2->next;
-					if (aux2->next)
-						aux2->next->prev = aux1;
-					if (aux2)
-					{
-						aux2->prev = aux1->prev;
-						aux2->next = aux1;
-					}
-					if (aux1)
-						aux1->prev = aux2;
-					if (aux2->prev)
-						aux2->prev->next = aux2;
-					head_tmp2 = aux2->prev;
-					if (!aux2->prev)
-						*list = aux2;
-					flag = 1;
-				}
-			}
-			if (flag == 0)
-				head_tmp1 = head_tmp1->next;
-		}
-	}
-}
-/**
- * sort_deck - sorts a deck of cards
- * @deck: ponter to the deck
- * Return: no return
- *
- **/
+ * sort_deck - sorts a deck of card
+ * @deck: doubly linked list to sort
+ */
 void sort_deck(deck_node_t **deck)
 {
-	if (deck)
+	deck_node_t *curr;
+	size_t len;
+	deck_node_t *one, *two, *three, *four;
+
+	len = list_len_deck(*deck);
+
+	if (!deck || !*deck || len < 2)
+		return;
+
+	curr = *deck;
+	while (curr)
 	{
-		kind_sort(deck);
-		num_sort(deck);
+		if (curr->prev && card_value(curr) < card_value(curr->prev))
+		{
+			one = curr->prev->prev;
+			two = curr->prev;
+			three = curr;
+			four = curr->next;
+
+			two->next = four;
+			if (four)
+				four->prev = two;
+			three->next = two;
+			three->prev = one;
+			if (one)
+				one->next = three;
+			else
+				*deck = three;
+			two->prev = three;
+			curr = *deck;
+			continue;
+		}
+		else
+			curr = curr->next;
 	}
+}
+
+/**
+ * card_value - returns the value of a card
+ * @node: card in a deck
+ *
+ * Return: value between 1 and 52
+ */
+int card_value(deck_node_t *node)
+{
+	char *val[13] = {"Ace", "2", "3", "4", "5", "6",
+		"7", "8", "9", "10", "Jack", "Queen", "King"};
+	char *kinds[4] = {"SPADE", "HEART", "CLUB", "DIAMOND"};
+	int i, kind_val = 0;
+
+	for (i = 1; i <= 13; i++)
+	{
+		if (!_strcmp(node->card->value, val[i - 1]))
+			kind_val = i;
+	}
+
+	for (i = 1; i <= 4; i++)
+	{
+		if (!_strcmp(kinds[node->card->kind], kinds[i - 1]))
+			kind_val = kind_val + (13 * i);
+	}
+
+	return (kind_val);
+}
+
+/**
+ * _strcmp - compares two strings
+ * @s1: first string to compare
+ * @s2: second string to compare
+ *
+ * Return: less than 0 if s1 is less than s2, 0 if they're equal,
+ * more than 0 if s1 is greater than s2
+ */
+int _strcmp(const char *s1, const char *s2)
+{
+	while (*s1 == *s2)
+	{
+		if (*s1 == '\0')
+		{
+			return (0);
+		}
+		s1++;
+		s2++;
+	}
+	return (*s1 - *s2);
+}
+
+/**
+ * list_len_deck - function returns length of list
+ * @list: head of list
+ *
+ * Return: length
+ */
+size_t list_len_deck(deck_node_t *list)
+{
+	size_t len = 0;
+
+	while (list)
+	{
+		len++;
+		list = list->next;
+	}
+	return (len);
 }
